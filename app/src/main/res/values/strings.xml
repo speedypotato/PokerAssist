@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">PokerAssist</string>
+    <string name="card_prefix">card_</string>
+    <string name="select_drawn_cards">Select Drawn Cards</string>
+    <string name="submit">Submit</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_splash">SplashActivity</string>
 </resources>

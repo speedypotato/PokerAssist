@@ -3,18 +3,15 @@ package com.example.pokerassist.activities
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import com.example.pokerassist.CardModel
 import com.example.pokerassist.R
 import com.example.pokerassist.SuitEnum
 
-import kotlinx.android.synthetic.main.activity_splash.*
-
 class SplashActivity : AppCompatActivity() {
     companion object {  //splash screen timeout in 'static'
         const val SPLASH_SCREEN_TIME_OUT: Long = 2000
-        val POKER_NUMBER: List<Int> = List(13) { it + 1}
+        const val POKER_NUMBER: Int = 13
     }
 
     /**
@@ -28,7 +25,7 @@ class SplashActivity : AppCompatActivity() {
         for (suit in SuitEnum.values())
             initCards(suit)
 
-        Handler().postDelayed({startActivity(Intent(this, MainActivity::class.java).apply {
+        Handler().postDelayed({startActivity(Intent(this, SelectActivity::class.java).apply {
             for (cardList in cards) {
                 if (cardList.size > 0)
                     putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
@@ -42,7 +39,7 @@ class SplashActivity : AppCompatActivity() {
      */
     private fun initCards(suit: SuitEnum = SuitEnum.SPADE) {
         cards.add(ArrayList<CardModel>().apply {
-            for (i in POKER_NUMBER)
+            for (i in 1..POKER_NUMBER)
                 add(CardModel(i, suit, false))
         })
     }
