@@ -1,11 +1,13 @@
 package com.example.pokerassist.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.example.pokerassist.CardModel
 import com.example.pokerassist.R
@@ -13,6 +15,9 @@ import com.example.pokerassist.SuitEnum
 import kotlinx.android.synthetic.main.activity_select.*
 
 class SelectActivity : AppCompatActivity() {
+    companion object {
+        const val selectedCards: String = "sel"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +30,18 @@ class SelectActivity : AppCompatActivity() {
 
         cardViewMap = HashMap()
         initCardViews()
+
+        submitButton.setOnClickListener {
+            if (selected.size == 2) {
+                submit()
+            } else {
+                AlertDialog.Builder(it.context)
+                    .setTitle(resources.getString(R.string.error))
+                    .setMessage(resources.getString(R.string.error_selection))
+                    .setPositiveButton(resources.getString(R.string.ok), null)
+                    .show()
+            }
+        }
     }
 
     /**
@@ -52,6 +69,7 @@ class SelectActivity : AppCompatActivity() {
                 for (card in suitList) {
                     ImageButton(this.context).apply{
                         setBackgroundResource(android.R.drawable.btn_default)
+                        backgroundTintList = ContextCompat.getColorStateList(this.context, android.R.color.darker_gray)
                         setImageResource(resources.getIdentifier(resources.getString(R.string.card_prefix) + card.suit.suit + card.number.toString(), "drawable", packageName))
                         layoutParams = ViewGroup.LayoutParams(width / cards.size, (1.4 * width / cards.size).toInt())
                         scaleType = ImageView.ScaleType.FIT_END
@@ -89,11 +107,26 @@ class SelectActivity : AppCompatActivity() {
         val card = cardViewMap[v]
         if (card != null) {
             if (card.selected)
-                v.setBackgroundResource(android.R.drawable.btn_default)
+                v.backgroundTintList = ContextCompat.getColorStateList(v.context, android.R.color.darker_gray)
             else
-                v.setBackgroundColor(ContextCompat.getColor(v.context, R.color.colorAccent))
+                v.backgroundTintList = ContextCompat.getColorStateList(v.context, R.color.colorAccent)
             card.selected = !card.selected
         }
+    }
+
+    /**
+     * Change activity upon submit
+     */
+    private fun submit() {
+        startActivity(Intent(this, PreflopActivity::class.java).apply {
+            putParcelableArrayListExtra(selectedCards, ArrayList<CardModel>().apply {
+                for (v in selected) {
+                    var selectedCard = cardViewMap[v]
+                    if (selectedCard != null)
+                        add(selectedCard)
+                }
+            })
+        })
     }
 
     private lateinit var cards: MutableList<ArrayList<CardModel>>

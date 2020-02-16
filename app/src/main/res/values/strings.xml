@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">PokerAssist</string>
+    <string name="call">Call</string>
+    <string name="call_fold">Call or Fold</string>
     <string name="card_prefix">card_</string>
+    <string name="error">Error</string>
+    <string name="error_selection">Make sure two cards are selected.</string>
+    <string name="fold">Fold</string>
+    <string name="ok">Ok</string>
+    <string name="preflop_recommendation">Preflop Recommendation</string>
+    <string name="proceed">Proceed</string>
+    <string name="raise">Raise</string>
+    <string name="raise_call">Raise or Call</string>
+    <string name="raise_call_fold">Raise, Call, or Fold</string>
+    <string name="raise_fold">Raise or Fold</string>
     <string name="select_drawn_cards">Select Drawn Cards</string>
     <string name="submit">Submit</string>
     <string name="title_activity_main">MainActivity</string>
