@@ -1,17 +1,18 @@
 package com.example.pokerassist.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.example.pokerassist.BetEnum
-import com.example.pokerassist.CardModel
-import com.example.pokerassist.R
+import android.widget.Toast
+import com.example.pokerassist.*
 import com.example.pokerassist.activities.SelectActivity.Companion.selectedCards
 import kotlinx.android.synthetic.main.activity_preflop.*
 import java.util.*
 
 class PreflopActivity : AppCompatActivity() {
     companion object {
-        const val random = 0.15
+        const val randomPerc = 15
+        const val straightDiff = 3  //allowed card diff + 1 to try for straight
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,7 +21,14 @@ class PreflopActivity : AppCompatActivity() {
 
         initDrawn()
 
-        updateView(determineRFI())
+        determineRFI().let {
+            updateView(it)
+            determineFudge(it)
+        }
+
+        foldButton.setOnClickListener {
+            foldSubmit()
+        }
     }
 
     /**
@@ -40,7 +48,7 @@ class PreflopActivity : AppCompatActivity() {
     }
 
     /**
-     * Hardcode for now
+     * Hardcoded table
      */
     private fun determineRFI(): BetEnum {
         return if (drawnCards[0].number == drawnCards[1].number) { //pocket pairs
@@ -86,6 +94,24 @@ class PreflopActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Randomizer suggestion
+     */
+    private fun determineFudge(res: BetEnum) {
+        val randomNum = (1..100).random()
+        if (res == BetEnum.FOLD && randomPerc >= randomNum) {
+            if (drawnCards[0].number != 1 && drawnCards[0].number - drawnCards[1].number <= straightDiff)  //straight
+                fudgeTextView.text = resources.getString(R.string.fudge_straight)
+            else if (drawnCards[0].number == 1 && drawnCards[1].number - drawnCards[0].number <= straightDiff)
+                fudgeTextView.text = resources.getString(R.string.fudge_straight)
+            else if (isSuited()) //flush
+                    fudgeTextView.text = resources.getString(R.string.fudge_flush)
+        }
+    }
+
+    /**
+     * Main user suggestion view
+     */
     private fun updateView(res: BetEnum) {
         outputTextView.text = when (res) {
             BetEnum.RAISE -> resources.getString(R.string.raise)
@@ -96,6 +122,30 @@ class PreflopActivity : AppCompatActivity() {
             BetEnum.CALL_FOLD -> resources.getString(R.string.call_fold)
             BetEnum.FOLD -> resources.getString(R.string.fold)
         }
+    }
+
+    /**
+     * Fold onClick puts user back to select screen
+     */
+    private fun foldSubmit() {
+        var cards = ArrayList<ArrayList<CardModel>>().apply {
+            for (suit in SuitEnum.values()) {
+                add(ArrayList<CardModel>().apply {
+                    for (i in 1..SplashActivity.POKER_NUMBER)
+                        add(CardModel(i, suit, false))
+                })
+            }
+        }
+        startActivity(Intent(this, ActivityEnum.SELECT.activityClass).apply {
+            putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_drawn_cards))
+            putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.PREFLOP)
+            putExtra(resources.getString(R.string.num_sel_tag), 2)
+            for (cardList in cards) {
+                if (cardList.size > 0)
+                    putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
+            }
+        })
+        finish()
     }
 
     private lateinit var drawnCards: ArrayList<CardModel>

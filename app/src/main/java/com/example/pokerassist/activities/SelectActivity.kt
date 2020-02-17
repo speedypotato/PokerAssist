@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.example.pokerassist.ActivityEnum
 import com.example.pokerassist.CardModel
 import com.example.pokerassist.R
 import com.example.pokerassist.SuitEnum
@@ -16,6 +17,7 @@ import kotlinx.android.synthetic.main.activity_select.*
 
 class SelectActivity : AppCompatActivity() {
     companion object {
+        const val defaultSelectable: Int = 2
         const val selectedCards: String = "sel"
     }
 
@@ -23,25 +25,46 @@ class SelectActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_select)
 
+        initNumSelectable()
+
+        initNextActivity()
+
         cards = ArrayList()
         initCardModels()
 
         selected = ArrayList()
 
+        initTitleView()
+
         cardViewMap = HashMap()
         initCardViews()
 
         submitButton.setOnClickListener {
-            if (selected.size == 2) {
+            if (selected.size == numSelectable) {
                 submit()
             } else {
                 AlertDialog.Builder(it.context)
                     .setTitle(resources.getString(R.string.error))
-                    .setMessage(resources.getString(R.string.error_selection))
+                    .setMessage(resources.getString(R.string.error_selection_1) + " " + numSelectable + " " + resources.getString(R.string.error_selection_2))
                     .setPositiveButton(resources.getString(R.string.ok), null)
                     .show()
             }
         }
+    }
+
+    /**
+     * Imports number of selectable card from intent and adds them to instance var
+     */
+    private fun initNumSelectable() {
+        numSelectable = intent.getIntExtra(resources.getString(R.string.num_sel_tag), defaultSelectable)
+    }
+
+    /**
+     * Imports whats activity to switch to next
+     */
+    private fun initNextActivity() {
+        val testActivity = intent.getSerializableExtra(resources.getString(R.string.next_act_tag))
+        nextActivity = if (testActivity is ActivityEnum) testActivity else ActivityEnum.SPLASH
     }
 
     /**
@@ -53,6 +76,13 @@ class SelectActivity : AppCompatActivity() {
             if (cardList != null)
                 cards.add(cardList)
         }
+    }
+
+    /**
+     * Updates Title from intent
+     */
+    private fun initTitleView() {
+        selectTextView.text = intent.getStringExtra(resources.getString(R.string.title_tag)) ?: resources.getString(R.string.select_drawn_cards)
     }
 
     /**
@@ -84,10 +114,10 @@ class SelectActivity : AppCompatActivity() {
     }
 
     /**
-     * Limits card selection to 2
+     * Limits card selection to numSelectable
      */
     private fun tryToggle(v: View) {
-        if (selected.size < 2) {
+        if (selected.size < numSelectable) {
             if (selected.contains(v))
                 selected.remove(v)
             else
@@ -118,7 +148,7 @@ class SelectActivity : AppCompatActivity() {
      * Change activity upon submit
      */
     private fun submit() {
-        startActivity(Intent(this, PreflopActivity::class.java).apply {
+        startActivity(Intent(this, nextActivity.activityClass).apply {
             putParcelableArrayListExtra(selectedCards, ArrayList<CardModel>().apply {
                 for (v in selected) {
                     var selectedCard = cardViewMap[v]
@@ -127,9 +157,12 @@ class SelectActivity : AppCompatActivity() {
                 }
             })
         })
+        finish()
     }
 
     private lateinit var cards: MutableList<ArrayList<CardModel>>
     private lateinit var cardViewMap: MutableMap<View, CardModel>
     private lateinit var selected: MutableList<View>
+    private var numSelectable = defaultSelectable
+    private lateinit var nextActivity: ActivityEnum
 }

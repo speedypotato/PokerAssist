@@ -8,7 +8,7 @@
     tools:context=".activities.PreflopActivity">
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/preflopTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -54,9 +54,22 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/stardos_stencil_bold"
         android:text="@string/error"
-        android:textSize="18sp"
+        android:textSize="36sp"
         app:layout_constraintBottom_toTopOf="@+id/foldButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+        app:layout_constraintTop_toBottomOf="@+id/preflopTextView"
+        app:layout_constraintVertical_bias="0.25" />
+
+    <TextView
+        android:id="@+id/fudgeTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:fontFamily="@font/stardos_stencil_bold"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="@+id/outputTextView"
+        app:layout_constraintStart_toStartOf="@+id/outputTextView"
+        app:layout_constraintTop_toBottomOf="@+id/outputTextView" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
