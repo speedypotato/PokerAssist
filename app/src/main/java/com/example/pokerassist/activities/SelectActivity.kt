@@ -18,7 +18,6 @@ import kotlinx.android.synthetic.main.activity_select.*
 class SelectActivity : AppCompatActivity() {
     companion object {
         const val defaultSelectable: Int = 2
-        const val selectedCards: String = "sel"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -149,13 +148,17 @@ class SelectActivity : AppCompatActivity() {
      */
     private fun submit() {
         startActivity(Intent(this, nextActivity.activityClass).apply {
-            putParcelableArrayListExtra(selectedCards, ArrayList<CardModel>().apply {
+            putParcelableArrayListExtra(resources.getString(R.string.selected_cards_tag), ArrayList<CardModel>().apply {
                 for (v in selected) {
                     var selectedCard = cardViewMap[v]
                     if (selectedCard != null)
                         add(selectedCard)
                 }
             })
+            when(nextActivity) {
+                ActivityEnum.RIVER -> putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), intent.getParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag)))
+                else -> { }
+            }
         })
         finish()
     }

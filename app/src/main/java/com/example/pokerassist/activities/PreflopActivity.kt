@@ -3,9 +3,7 @@ package com.example.pokerassist.activities
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Toast
 import com.example.pokerassist.*
-import com.example.pokerassist.activities.SelectActivity.Companion.selectedCards
 import kotlinx.android.synthetic.main.activity_preflop.*
 import java.util.*
 
@@ -29,13 +27,17 @@ class PreflopActivity : AppCompatActivity() {
         foldButton.setOnClickListener {
             foldSubmit()
         }
+
+        proceedButton.setOnClickListener {
+            proceedSubmit()
+        }
     }
 
     /**
      * Gets from intent, sorts [0] high [1] low
      */
     private fun initDrawn() {
-        val intentCards = intent.getParcelableArrayListExtra<CardModel>(selectedCards)
+        val intentCards = intent.getParcelableArrayListExtra<CardModel>(resources.getString(R.string.selected_cards_tag))
         if (intentCards != null) {
             drawnCards = intentCards
             if (drawnCards[0].number < drawnCards[1].number && drawnCards[0].number != 1)
@@ -140,6 +142,32 @@ class PreflopActivity : AppCompatActivity() {
             putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_drawn_cards))
             putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.PREFLOP)
             putExtra(resources.getString(R.string.num_sel_tag), 2)
+            for (cardList in cards) {
+                if (cardList.size > 0)
+                    putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
+            }
+        })
+        finish()
+    }
+
+    /**
+     * Proceed onClick moves on to SelectActivity -> RiverActivity
+     */
+    private fun proceedSubmit() {
+        var cards = ArrayList<ArrayList<CardModel>>().apply {
+            for (suit in SuitEnum.values()) {
+                add(ArrayList<CardModel>().apply {
+                    for (i in 1..SplashActivity.POKER_NUMBER)
+                        if (!drawnCards.contains(CardModel(i, suit, false)))
+                            add(CardModel(i, suit, false))
+                })
+            }
+        }
+        startActivity(Intent(this, ActivityEnum.SELECT.activityClass).apply {
+            putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_river_rards))
+            putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.RIVER)
+            putExtra(resources.getString(R.string.num_sel_tag), 3)
+            putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), drawnCards)
             for (cardList in cards) {
                 if (cardList.size > 0)
                     putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
