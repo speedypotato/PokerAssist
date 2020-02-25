@@ -164,7 +164,7 @@ class PreflopActivity : AppCompatActivity() {
             }
         }
         startActivity(Intent(this, ActivityEnum.SELECT.activityClass).apply {
-            putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_river_rards))
+            putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_flop_cards))
             putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.RIVER)
             putExtra(resources.getString(R.string.num_sel_tag), 3)
             putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), drawnCards)

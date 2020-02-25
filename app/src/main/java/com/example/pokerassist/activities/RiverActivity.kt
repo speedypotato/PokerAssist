@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -15,6 +18,7 @@ import kotlinx.android.synthetic.main.activity_river.*
 import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 import kotlin.math.max
 
 //TODO: figure out actual probabilities
@@ -34,31 +38,52 @@ class RiverActivity : AppCompatActivity() {
         visibleCards = ArrayList()
         initCards()
 
-//        //debug
-//        for (card in visibleCards) {
-//            Toast.makeText(this, card.toString(), Toast.LENGTH_SHORT).show()
-//        }
+        initTitle()
 
         foldButton2.setOnClickListener { foldSubmit() }
         proceedButton2.setOnClickListener { proceedSubmit() }
 
-        onePairProb()
-        highCardProb()
+        updateProbView(twoPairTextView, twoPairProb())
+        updateProbView(onePairTextView, onePairProb())
+        updateProbView(higherCardTextView, highCardProb())
     }
 
+    /**
+     * Changes title based on number of cards visible
+     */
+    private fun initTitle() {
+        when(visibleCards.size) {
+            5 -> riverTextView2.text = resources.getString(R.string.flop_probabilities)
+            6 -> riverTextView2.text = resources.getString(R.string.turn_probabilities)
+            7 -> riverTextView2.text = resources.getString(R.string.river_probabilities)
+            else -> riverTextView2.text = resources.getString(R.string.error)
+        }
+    }
+
+    /**
+     * Get player count from settings
+     */
     private fun initPlayers() {
         val sharedPref = getSharedPreferences(getString(R.string.settings_file_key), Context.MODE_PRIVATE)
         players = sharedPref.getInt(resources.getString(R.string.players), SettingsActivity.defaultPlayers)
     }
 
+    /**
+     * Get cards and card count from intent
+     */
     private fun initCards() {
         visibleCards.addAll(intent.getParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag)) ?: ArrayList())
         visibleCards.addAll(intent.getParcelableArrayListExtra(resources.getString(R.string.selected_cards_tag)) ?: ArrayList())
         visibleCards.sort()
         cardsLeft = numCards - (players * numDealt) - (visibleCards.size - 1)
+//        for (card in visibleCards)
+//            Toast.makeText(this, visibleCards.toString(), Toast.LENGTH_SHORT).show()
 //        Toast.makeText(this, "numcards:" + numCards.toString() + " players*numDealt:" + (players * numDealt).toString() + " visibleCards.size:" + (visibleCards.size - 1).toString(), Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Fold onClick resets to card select screen
+     */
     private fun foldSubmit() {
         var cards = java.util.ArrayList<java.util.ArrayList<CardModel>>().apply {
             for (suit in SuitEnum.values()) {
@@ -80,15 +105,63 @@ class RiverActivity : AppCompatActivity() {
         finish()
     }
 
+    /**
+     * Proceed onClick moves on to the next step
+     */
     private fun proceedSubmit() {
         when(visibleCards.size) {
             5 -> {
-
+                val cards = java.util.ArrayList<java.util.ArrayList<CardModel>>().apply {
+                    for (suit in SuitEnum.values()) {
+                        add(java.util.ArrayList<CardModel>().apply {
+                            for (i in 1..SplashActivity.POKER_NUMBER)
+                                if (!visibleCards.contains(CardModel(i, suit, false)))
+                                    add(CardModel(i, suit, false))
+                        })
+                    }
+                }
+                startActivity(Intent(this, ActivityEnum.SELECT.activityClass).apply {
+                    putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_turn_cards))
+                    putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.RIVER)
+                    putExtra(resources.getString(R.string.num_sel_tag), 1)
+                    putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), visibleCards)
+                    for (cardList in cards) {
+                        if (cardList.size > 0)
+                            putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
+                    }
+                })
+                finish()
             }
             6 -> {
-
+                val cards = java.util.ArrayList<java.util.ArrayList<CardModel>>().apply {
+                    for (suit in SuitEnum.values()) {
+                        add(java.util.ArrayList<CardModel>().apply {
+                            for (i in 1..SplashActivity.POKER_NUMBER)
+                                if (!visibleCards.contains(CardModel(i, suit, false)))
+                                    add(CardModel(i, suit, false))
+                        })
+                    }
+                }
+                startActivity(Intent(this, ActivityEnum.SELECT.activityClass).apply {
+                    putExtra(resources.getString(R.string.title_tag), resources.getString(R.string.select_river_cards))
+                    putExtra(resources.getString(R.string.next_act_tag), ActivityEnum.RIVER)
+                    putExtra(resources.getString(R.string.num_sel_tag), 1)
+                    putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), visibleCards)
+                    for (cardList in cards) {
+                        if (cardList.size > 0)
+                            putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
+                    }
+                })
+                finish()
             }
+            else -> foldSubmit()
         }
+    }
+
+    private fun updateProbView(v: TextView, prob: Double) {
+        if (prob == 1.0)
+            v.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
+        v.text = (prob * 100).toString()
     }
 
     private fun royalFlushProb() : Double {
@@ -119,37 +192,61 @@ class RiverActivity : AppCompatActivity() {
         return 0.0
     }
 
+    /**
+     * Probability of drawing two pairs
+     */
     private fun twoPairProb() : Double {
-        return 0.0
-    }
-
-    private fun onePairProb() : Double {
-        var probability = 0.0
-        for (i in 1 until visibleCards.size) {
+        val pairs = HashSet<Int>()
+        val notPairs = HashSet<Int>()
+        for (i in 1 until visibleCards.size) {  //check how many pairs exists
+            notPairs.add(visibleCards[i - 1].number)
             if (visibleCards[i - 1].number == visibleCards[i].number) {
-                probability = 1.0
-                onePairTextView.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
+                pairs.add(visibleCards[i].number)
+                notPairs.remove(visibleCards[i].number)
             }
         }
-        if (probability != 1.0) {
-            for (i in 0 until visibleCards.size)
-                probability += 3.0 / (cardsLeft - i)
-        }
+        if (!pairs.contains(visibleCards[visibleCards.size - 1].number))
+            notPairs.add(visibleCards[visibleCards.size - 1].number)
 
-        onePairTextView.text = (probability * 100).toString()
+        return if (pairs.size == 0 && visibleCards.size == 5) {  //if no pair exists after flop, impossible
+            ((3.0 * visibleCards.size) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                    ((3.0 * (visibleCards.size - 1)) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+        } else if (pairs.size == 1) {   // can't assume just two cards = pair, maybe all 4 are out
+            if (visibleCards.size == 5) {
+                ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                        ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+            } else {    //assume 6 for now
+                ((3.0 * notPairs.size - 2) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+            }
+        } else {
+            1.0
+        }
+    }
+
+    /**
+     * Probability of drawing a pair
+     */
+    private fun onePairProb() : Double {
+        var probability = 0.0
+        for (i in 1 until visibleCards.size)    //check if pair exists
+            if (visibleCards[i - 1].number == visibleCards[i].number)
+                probability = 1.0
+
+        if (probability != 1.0)
+            probability += (3.0 / (numCards.toDouble() - visibleCards.size.toDouble())) * visibleCards.size.toDouble()
+
         return probability
     }
 
+    /**
+     * Probability drawing higher
+     */
     private fun highCardProb() : Double {
-        //probability drawing higher
-        var probability = ((14 - visibleCards[visibleCards.size - 1].number) * 4).toDouble() / cardsLeft
-        if (probability > 1) {
-            probability = 1.0
-            higherCardTextView.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
-        }
-
-        higherCardTextView.text = (probability * 100.0).toString()
-        return probability
+        // unhelpful = unknown - helpful -> helpful / unknown?
+        return if (visibleCards[visibleCards.size - 1].number == 1)
+            1.0
+        else
+            ((14 - visibleCards[visibleCards.size - 1].number) * 4).toDouble() / (numCards.toDouble() - visibleCards.size.toDouble())
     }
 
     private var cardsLeft = numCards

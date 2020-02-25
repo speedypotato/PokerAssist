@@ -14,4 +14,11 @@ class ExampleUnitTest {
     fun addition_isCorrect() {
         assertEquals(4, 2 + 2)
     }
+
+    @Test
+    fun cardCompare_isCorrect() {
+        val c = CardModel(2, SuitEnum.CLUB, false)
+        val s = CardModel(1, SuitEnum.SPADE, false)
+        assertEquals(c.compareTo(s), -12)
+    }
 }

@@ -9,6 +9,9 @@ data class CardModel(val number: Int, val suit: SuitEnum, var selected: Boolean)
         return if (number == 1)
             if (other.number != 1) 14 - other.number
             else suit.compareTo(other.suit)
+        else if (other.number == 1)
+            if (number != 1) number - 14
+            else suit.compareTo(other.suit)
         else if (number == other.number) suit.compareTo(other.suit)
         else number - other.number
     }

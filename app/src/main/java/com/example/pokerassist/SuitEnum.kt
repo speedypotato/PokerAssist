@@ -1,8 +1,8 @@
 package com.example.pokerassist
 
 enum class SuitEnum(val suit: String) {
-    SPADE("s"),
-    DIAMOND("d"),
+    CLUB("c"),
     HEART("h"),
-    CLUB("c")
+    DIAMOND("d"),
+    SPADE("s")
 }
