@@ -43,6 +43,7 @@ class RiverActivity : AppCompatActivity() {
         foldButton2.setOnClickListener { foldSubmit() }
         proceedButton2.setOnClickListener { proceedSubmit() }
 
+        updateProbView(threeKindTextview, threeKindProb())
         updateProbView(twoPairTextView, twoPairProb())
         updateProbView(onePairTextView, onePairProb())
         updateProbView(higherCardTextView, highCardProb())
@@ -188,8 +189,35 @@ class RiverActivity : AppCompatActivity() {
         return 0.0
     }
 
+    /**
+     * Probability of 3 kind
+     */
     private fun threeKindProb() : Double {
-        return 0.0
+        var probability = 0.0
+        val pairs = HashSet<Int>()
+        val notPairs = HashSet<Int>()
+        for (i in 1 until visibleCards.size) {  //determine existing pairs
+            notPairs.add(visibleCards[i - 1].number)
+            if (visibleCards[i - 1].number == visibleCards[i].number) {
+                notPairs.remove(visibleCards[i - 1].number)
+                if (pairs.contains(visibleCards[i].number)) //three of a kind found
+                    probability = 1.0
+                else pairs.add(visibleCards[i].number)
+            }
+        }
+        if (probability != 1.0) {
+            if (visibleCards.size == 5) {
+                probability += ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                        ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                if (notPairs.size > 0) {
+                    probability += ((3 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                        (2 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                }
+            } else if (pairs.size > 0) {    //must have at least 1 pair if you are on the turn already
+                probability += ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble()))
+            }
+        }
+        return probability
     }
 
     /**
@@ -216,10 +244,12 @@ class RiverActivity : AppCompatActivity() {
                 ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) +
                         ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
             } else {    //assume 6 for now
-                ((3.0 * notPairs.size - 2) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble()))
             }
-        } else {
+        } else if (pairs.size == 2) {
             1.0
+        } else {
+            0.0
         }
     }
 
