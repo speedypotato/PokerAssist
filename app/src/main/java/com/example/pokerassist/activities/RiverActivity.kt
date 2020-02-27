@@ -43,6 +43,8 @@ class RiverActivity : AppCompatActivity() {
         foldButton2.setOnClickListener { foldSubmit() }
         proceedButton2.setOnClickListener { proceedSubmit() }
 
+        updateProbView(flushTextView, flushProb())
+//        updateProbView(straightTextView, straightProb())
         updateProbView(threeKindTextview, threeKindProb())
         updateProbView(twoPairTextView, twoPairProb())
         updateProbView(onePairTextView, onePairProb())
@@ -181,10 +183,33 @@ class RiverActivity : AppCompatActivity() {
         return 0.0
     }
 
+    /**
+     * Probability of a flush
+     */
     private fun flushProb() : Double {
-        return 0.0
+        var probability = 0.0
+        val suitFreq = HashMap<SuitEnum, Int>()
+        for (i in visibleCards) {
+            suitFreq[i.suit] = (suitFreq[i.suit] ?: 0) + 1
+            Log.d("test", i.suit.toString() + " " + suitFreq[i.suit].toString())
+            if (suitFreq[i.suit] == 5)
+                probability = 1.0
+        }
+
+        if (probability != 1.0) {
+            for (value in suitFreq.values) {
+                when (value) {
+                    3 -> probability += (13 - value) / (numCards.toDouble() - visibleCards.size.toDouble()) * (13 - value - 1) / (numCards.toDouble() - visibleCards.size.toDouble() - 1)
+                    4 -> probability += (13 - value) / (numCards.toDouble() - visibleCards.size.toDouble())
+                }
+            }
+        }
+        return probability
     }
 
+    /**
+     * Probability of a straight
+     */
     private fun straightProb() : Double {
         return 0.0
     }
