@@ -18,6 +18,7 @@ import kotlinx.android.synthetic.main.activity_river.*
 import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.max
 
@@ -42,6 +43,10 @@ class RiverActivity : AppCompatActivity() {
 
         foldButton2.setOnClickListener { foldSubmit() }
         proceedButton2.setOnClickListener { proceedSubmit() }
+
+        updateProbView(royalFlushTextView, royalFlushProb())
+
+        updateProbView(fourKindTextView, fourKindProb())
 
         updateProbView(flushTextView, flushProb())
 //        updateProbView(straightTextView, straightProb())
@@ -164,11 +169,28 @@ class RiverActivity : AppCompatActivity() {
     private fun updateProbView(v: TextView, prob: Double) {
         if (prob == 1.0)
             v.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
+        else if (prob == 0.0)
+            v.setTextColor(ContextCompat.getColor(this, R.color.colorAccentRed))
         v.text = (prob * 100).toString()
     }
 
     private fun royalFlushProb() : Double {
-        return 0.0
+        val cardVals = mutableSetOf(10, 11, 12, 13, 1)
+        val curSuit = visibleCards[0].suit
+        for (i in 0 until visibleCards.size) {
+            if (visibleCards[i].suit != curSuit) {
+                return 0.0
+            }
+            cardVals.remove(visibleCards[i].number)
+        }
+
+        return when (cardVals.size) {
+            0 -> 1.0
+            1 -> 1.0 / (numCards.toDouble() - visibleCards.size.toDouble())
+            2 -> (2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                    (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))
+            else -> 0.0
+        }
     }
 
     private fun straightFlushProb() : Double {
@@ -176,7 +198,27 @@ class RiverActivity : AppCompatActivity() {
     }
 
     private fun fourKindProb() : Double {
-        return 0.0
+        var freqMap = HashMap<Int, Int>()
+        for (i in visibleCards) {
+            freqMap[i.number] = (freqMap[i.number] ?: 0) + 1
+            if ((freqMap[i.number] ?: 0) >= 4)
+                return 1.0
+        }
+
+        var prob = 0.0
+        for (value in freqMap.values) {
+            if (value == 2 && visibleCards.size == 5) {   //pair exists
+                prob += (2 / (numCards.toDouble() - visibleCards.size.toDouble())) * (1 /
+                        (numCards.toDouble() - visibleCards.size.toDouble() - 1))
+            } else if (value == 3) {    //triple exists
+                when (visibleCards.size) {
+                    5 -> prob += 1 / (numCards.toDouble() - visibleCards.size.toDouble()) +
+                            1 / (numCards.toDouble() - visibleCards.size.toDouble() - 1)
+                    6 -> prob += 1 / (numCards.toDouble() - visibleCards.size.toDouble())
+                }
+            }
+        }
+        return prob
     }
 
     private fun fullHouseProb() : Double {
@@ -191,7 +233,6 @@ class RiverActivity : AppCompatActivity() {
         val suitFreq = HashMap<SuitEnum, Int>()
         for (i in visibleCards) {
             suitFreq[i.suit] = (suitFreq[i.suit] ?: 0) + 1
-            Log.d("test", i.suit.toString() + " " + suitFreq[i.suit].toString())
             if (suitFreq[i.suit] == 5)
                 probability = 1.0
         }
