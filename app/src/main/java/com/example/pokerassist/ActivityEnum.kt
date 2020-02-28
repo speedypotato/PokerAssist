@@ -7,5 +7,6 @@ enum class ActivityEnum(val activityClass: Class<*>) {
     SETTINGS(SettingsActivity::class.java),
     SELECT(SelectActivity::class.java),
     PREFLOP(PreflopActivity::class.java),
-    RIVER(RiverActivity::class.java)
+    RIVER(RiverActivity::class.java),
+    CALCULATOR(CalculatorActivity::class.java)
 }

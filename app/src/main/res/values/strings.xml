@@ -1,8 +1,11 @@
 <resources>
     <string name="app_name">PokerAssist</string>
+    <string name="author">SpeedyPotato</string>
     <string name="call">Call</string>
     <string name="call_fold">Call or Fold</string>
     <string name="card_prefix">card_</string>
+    <string name="closing_app">Quit App</string>
+    <string name="closing_message">Are you sure you want to quit the application?</string>
     <string name="settings_file_key">com.example.pokerassist.SETTINGS_FILE_KEY</string>
     <string name="drawn_cards_tag">drawnCards</string>
     <string name="error">Error</string>
@@ -20,6 +23,7 @@
     <string name="hand">Hand</string>
     <string name="higher_card">Higher Card</string>
     <string name="next_act_tag">nextAct</string>
+    <string name="no">No</string>
     <string name="num_sel_tag">numSel</string>
     <string name="ok">Ok</string>
     <string name="one_pair">One Pair</string>
@@ -31,6 +35,7 @@
     <string name="raise_call">Raise or Call</string>
     <string name="raise_call_fold">Raise, Call, or Fold</string>
     <string name="raise_fold">Raise or Fold</string>
+    <string name="reset">Reset</string>
     <string name="river_probabilities">River Probabilities</string>
     <string name="royal_flush">Royal Flush</string>
     <string name="selected_cards_tag">selectedCards</string>
@@ -45,8 +50,21 @@
     <string name="tap_for_settings">Tap anywhere to change settings</string>
     <string name="three_kind">Three of a Kind</string>
     <string name="title_tag">title</string>
-    <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_splash">SplashActivity</string>
     <string name="turn_probabilities">Turn Probabilities</string>
     <string name="two_pair">Two Pair</string>
+    <string name="yes">Yes</string>
+
+    <string name="calculator">Calculator</string>
+    <string name="buy_in">Buy In:</string>
+    <string name="buy_in_message">Currently scales off the biggest chip ($5000->$1)</string>
+    <string name="cancel">Cancel</string>
+    <string name="color">Color</string>
+    <string name="enter_buy_in_amt">Enter Buy-In Amount</string>
+    <string name="quantity">Quantity</string>
+    <string name="simple_mode_tag">simple_mode_tag</string>
+    <string name="speedypotato">SpeedyPotato</string>
+    <string name="total">Total:</string>
+    <string name="value">Value</string>
+    <string name="zero">0.00</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.example.pokerassist.activities
 
+import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -49,6 +50,21 @@ class SelectActivity : AppCompatActivity() {
                     .show()
             }
         }
+
+        calcButtonSelect.setOnClickListener { calculatorSubmit() }
+    }
+
+    /**
+     * Confirm back button exit
+     * TODO: Ideally would like some sort of back button functionality
+     */
+    override fun onBackPressed() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(resources.getString(R.string.closing_app))
+            .setMessage(resources.getString(R.string.closing_message))
+            .setPositiveButton(resources.getString(R.string.yes), DialogInterface.OnClickListener { _, _ -> finish(); })
+            .setNegativeButton(resources.getString(R.string.no), null)
+            .show()
     }
 
     /**
@@ -160,7 +176,15 @@ class SelectActivity : AppCompatActivity() {
                 else -> { }
             }
         })
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         finish()
+    }
+
+    /**
+     * Opens calculator activity
+     */
+    private fun calculatorSubmit() {
+        startActivity(Intent(this, ActivityEnum.CALCULATOR.activityClass))
     }
 
     private lateinit var cards: MutableList<ArrayList<CardModel>>

@@ -14,7 +14,7 @@ import kotlinx.android.synthetic.main.activity_splash.*
 
 class SplashActivity : AppCompatActivity() {
     companion object {  //splash screen timeout in 'static'
-        const val SPLASH_SCREEN_TIME_OUT: Long = 2000
+        const val SPLASH_SCREEN_TIME_OUT: Long = 1750
         const val POKER_NUMBER: Int = 13
     }
 

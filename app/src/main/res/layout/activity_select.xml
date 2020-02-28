@@ -47,4 +47,14 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/calcButtonSelect"
+        android:layout_width="40dp"
+        android:layout_height="29dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/calc_icon"
+        app:layout_constraintBottom_toBottomOf="@+id/selectTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,7 @@
 package com.example.pokerassist.activities
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -27,7 +28,6 @@ class RiverActivity : AppCompatActivity() {
     companion object {
         const val numCards = 52
         const val numDealt = 2
-        const val maxVisible = 7
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,15 +39,16 @@ class RiverActivity : AppCompatActivity() {
         visibleCards = ArrayList()
         initCards()
 
-        initTitle()
+        initView()
 
         foldButton2.setOnClickListener { foldSubmit() }
         proceedButton2.setOnClickListener { proceedSubmit() }
+        calcButtonRiver.setOnClickListener { calculatorSubmit() }
 
         updateProbView(royalFlushTextView, royalFlushProb())
-
+//        updateProbView(straightFlushTextView, straightFlushProb())
         updateProbView(fourKindTextView, fourKindProb())
-
+//        updateProbView(fullHouseTextView, fullHouseProb())
         updateProbView(flushTextView, flushProb())
 //        updateProbView(straightTextView, straightProb())
         updateProbView(threeKindTextview, threeKindProb())
@@ -57,13 +58,29 @@ class RiverActivity : AppCompatActivity() {
     }
 
     /**
+     * Confirm back button exit
+     * TODO: Ideally would like some sort of back button functionality
+     */
+    override fun onBackPressed() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(resources.getString(R.string.closing_app))
+            .setMessage(resources.getString(R.string.closing_message))
+            .setPositiveButton(resources.getString(R.string.yes), DialogInterface.OnClickListener { _, _ -> finish(); })
+            .setNegativeButton(resources.getString(R.string.no), null)
+            .show()
+    }
+
+    /**
      * Changes title based on number of cards visible
      */
-    private fun initTitle() {
+    private fun initView() {
         when(visibleCards.size) {
             5 -> riverTextView2.text = resources.getString(R.string.flop_probabilities)
             6 -> riverTextView2.text = resources.getString(R.string.turn_probabilities)
-            7 -> riverTextView2.text = resources.getString(R.string.river_probabilities)
+            7 -> {
+                riverTextView2.text = resources.getString(R.string.river_probabilities)
+                proceedButton2.text = resources.getString(R.string.reset)
+            }
             else -> riverTextView2.text = resources.getString(R.string.error)
         }
     }
@@ -138,6 +155,7 @@ class RiverActivity : AppCompatActivity() {
                             putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
                     }
                 })
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 finish()
             }
             6 -> {
@@ -160,6 +178,7 @@ class RiverActivity : AppCompatActivity() {
                             putParcelableArrayListExtra(cardList[0].suit.suit, cardList)
                     }
                 })
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 finish()
             }
             else -> foldSubmit()
@@ -167,30 +186,69 @@ class RiverActivity : AppCompatActivity() {
     }
 
     private fun updateProbView(v: TextView, prob: Double) {
-        if (prob == 1.0)
+        var probability = prob
+        if (visibleCards.size == 7 && probability != 1.0)   //if @ game end, didn't get, show 0(impossible)
+            probability = 0.0
+
+        if (probability == 1.0)
             v.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
-        else if (prob == 0.0)
+        else if (probability == 0.0)
             v.setTextColor(ContextCompat.getColor(this, R.color.colorAccentRed))
-        v.text = (prob * 100).toString()
+        v.text = (probability * 100).toString()
     }
 
+    /**
+     * TODO: BROKEN
+     */
     private fun royalFlushProb() : Double {
-        val cardVals = mutableSetOf(10, 11, 12, 13, 1)
-        val curSuit = visibleCards[0].suit
-        for (i in 0 until visibleCards.size) {
-            if (visibleCards[i].suit != curSuit) {
-                return 0.0
+        val possRF = HashMap<SuitEnum, HashSet<CardModel>>()
+        for (suit in SuitEnum.values()) {
+            possRF[suit] = HashSet<CardModel>().apply {
+                for (i in 10..14) {
+                    if (i == 14)
+                        add(CardModel(1, suit, false))
+                    else
+                        add(CardModel(i, suit, false))
+                }
             }
-            cardVals.remove(visibleCards[i].number)
+        }
+        for ((suit, cards) in possRF) { //get cards required to complete RF for each suit
+            possRF[suit] = cards.filterTo(HashSet()) { cm -> !visibleCards.contains(cm) }
         }
 
-        return when (cardVals.size) {
-            0 -> 1.0
-            1 -> 1.0 / (numCards.toDouble() - visibleCards.size.toDouble())
-            2 -> (2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
-                    (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))
-            else -> 0.0
+//        val cardFreq = HashMap<Int, Int>()
+//        for (card in visibleCards) {    //frequency map for easier calc
+//            cardFreq[card.number] = (cardFreq[card.number] ?: 1) + 1
+//        }
+
+        var prob = 0.0
+        for (cards in possRF.values) { //begin probability calculation
+            when (visibleCards.size) {
+                5 -> {  //can draw 2 cards
+                    when (cards.size) {
+                        2 -> {  //need 2 left to complete
+                            prob += (2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))}
+                        1 -> {
+                            prob += (1.0 / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                                (.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))}
+                        0 -> { return 1.0 } //RF found
+                    }
+                }
+                6 -> {  //can draw 1 card
+                    when (cards.size) {
+                        1 -> {prob += (1.0 / (numCards.toDouble() - visibleCards.size.toDouble()))} //can only draw 1 card to complete at this point
+                        0 -> { return 1.0 }
+                    }
+                }
+                7 -> {
+                    when (cards.size) {
+                        0 -> { return 1.0 }
+                    }
+                }
+            }
         }
+        return prob
     }
 
     private fun straightFlushProb() : Double {
@@ -201,20 +259,20 @@ class RiverActivity : AppCompatActivity() {
         var freqMap = HashMap<Int, Int>()
         for (i in visibleCards) {
             freqMap[i.number] = (freqMap[i.number] ?: 0) + 1
-            if ((freqMap[i.number] ?: 0) >= 4)
+            if ((freqMap[i.number] ?: 0) >= 4)  //reached 4 of a kind
                 return 1.0
         }
 
         var prob = 0.0
         for (value in freqMap.values) {
             if (value == 2 && visibleCards.size == 5) {   //pair exists
-                prob += (2 / (numCards.toDouble() - visibleCards.size.toDouble())) * (1 /
-                        (numCards.toDouble() - visibleCards.size.toDouble() - 1))
+                prob += (2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) * (1.0 /
+                        (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
             } else if (value == 3) {    //triple exists
                 when (visibleCards.size) {
-                    5 -> prob += 1 / (numCards.toDouble() - visibleCards.size.toDouble()) +
-                            1 / (numCards.toDouble() - visibleCards.size.toDouble() - 1)
-                    6 -> prob += 1 / (numCards.toDouble() - visibleCards.size.toDouble())
+                    5 -> prob += 1.0 / (numCards.toDouble() - visibleCards.size.toDouble()) +
+                            1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)
+                    6 -> prob += 1.0 / (numCards.toDouble() - visibleCards.size.toDouble())
                 }
             }
         }
@@ -233,15 +291,26 @@ class RiverActivity : AppCompatActivity() {
         val suitFreq = HashMap<SuitEnum, Int>()
         for (i in visibleCards) {
             suitFreq[i.suit] = (suitFreq[i.suit] ?: 0) + 1
-            if (suitFreq[i.suit] == 5)
+            if (suitFreq[i.suit] == 5)  //reached a flush
                 probability = 1.0
         }
 
         if (probability != 1.0) {
-            for (value in suitFreq.values) {
-                when (value) {
-                    3 -> probability += (13 - value) / (numCards.toDouble() - visibleCards.size.toDouble()) * (13 - value - 1) / (numCards.toDouble() - visibleCards.size.toDouble() - 1)
-                    4 -> probability += (13 - value) / (numCards.toDouble() - visibleCards.size.toDouble())
+            when (visibleCards.size) {
+                5 -> {  //can draw 2 cards
+                    for (value in suitFreq.values) {
+                        when (value) {
+                            3 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble()) * (13.0 - value - 1.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)
+                            4 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble())
+                        }
+                    }
+                }
+                6 -> {  //can draw 1 more card
+                    for (value in suitFreq.values) {
+                        when (value) {
+                            4 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble())
+                        }
+                    }
                 }
             }
         }
@@ -273,16 +342,17 @@ class RiverActivity : AppCompatActivity() {
         }
         if (probability != 1.0) {
             if (visibleCards.size == 5) {
-                probability += ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) +
-                        ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                probability += ((2.0 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                        ((2.0 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
                 if (notPairs.size > 0) {
-                    probability += ((3 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) *
-                        (2 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                    probability += ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                        (2.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
                 }
             } else if (pairs.size > 0) {    //must have at least 1 pair if you are on the turn already
-                probability += ((2 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble()))
+                probability += ((2.0 * pairs.size) / (numCards.toDouble() - visibleCards.size.toDouble()))
             }
         }
+
         return probability
     }
 
@@ -312,7 +382,7 @@ class RiverActivity : AppCompatActivity() {
             } else {    //assume 6 for now
                 ((3.0 * notPairs.size) / (numCards.toDouble() - visibleCards.size.toDouble()))
             }
-        } else if (pairs.size == 2) {
+        } else if (pairs.size >= 2) {
             1.0
         } else {
             0.0
@@ -343,6 +413,13 @@ class RiverActivity : AppCompatActivity() {
             1.0
         else
             ((14 - visibleCards[visibleCards.size - 1].number) * 4).toDouble() / (numCards.toDouble() - visibleCards.size.toDouble())
+    }
+
+    /**
+     * Opens calculator activity
+     */
+    private fun calculatorSubmit() {
+        startActivity(Intent(this, ActivityEnum.CALCULATOR.activityClass))
     }
 
     private var cardsLeft = numCards

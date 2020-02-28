@@ -7,6 +7,15 @@
     android:background="@color/colorPrimary"
     tools:context=".activities.PreflopActivity">
 
+    <ImageButton
+        android:id="@+id/calcButtonPreflop"
+        android:layout_width="40dp"
+        android:layout_height="29dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/calc_icon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/preflopTextView" />
+
     <TextView
         android:id="@+id/preflopTextView"
         android:layout_width="wrap_content"
@@ -55,11 +64,11 @@
         android:fontFamily="@font/stardos_stencil_bold"
         android:text="@string/error"
         android:textSize="36sp"
-        app:layout_constraintBottom_toTopOf="@+id/foldButton"
+        app:layout_constraintBottom_toTopOf="@+id/imageView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/preflopTextView"
-        app:layout_constraintVertical_bias="0.25" />
+        app:layout_constraintVertical_bias="0.24000001" />
 
     <TextView
         android:id="@+id/fudgeTextView"
@@ -71,5 +80,16 @@
         app:layout_constraintEnd_toEndOf="@+id/outputTextView"
         app:layout_constraintStart_toStartOf="@+id/outputTextView"
         app:layout_constraintTop_toBottomOf="@+id/outputTextView" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="351dp"
+        android:layout_height="400dp"
+        android:layout_marginBottom="24dp"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toTopOf="@+id/proceedButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/preflop_chart" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

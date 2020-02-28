@@ -28,6 +28,7 @@ class SettingsActivity : AppCompatActivity() {
         initLayout()
 
         settingsButton.setOnClickListener{ submit() }
+        backButtonSettings.setOnClickListener { back() }
     }
 
     /**
@@ -56,6 +57,14 @@ class SettingsActivity : AppCompatActivity() {
                 fieldMap[label] = entry
             })
         }
+    }
+
+    /**
+     * Back Arrow button
+     */
+    private fun back() {
+        startActivity(Intent(this, ActivityEnum.SPLASH.activityClass))
+        finish()
     }
 
     /**
