@@ -85,7 +85,7 @@
         android:id="@+id/imageView"
         android:layout_width="351dp"
         android:layout_height="400dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="32dp"
         android:scaleType="centerInside"
         app:layout_constraintBottom_toTopOf="@+id/proceedButton"
         app:layout_constraintEnd_toEndOf="parent"

@@ -48,7 +48,7 @@ class RiverActivity : AppCompatActivity() {
         updateProbView(royalFlushTextView, royalFlushProb())
 //        updateProbView(straightFlushTextView, straightFlushProb())
         updateProbView(fourKindTextView, fourKindProb())
-//        updateProbView(fullHouseTextView, fullHouseProb())
+        updateProbView(fullHouseTextView, fullHouseProb())
         updateProbView(flushTextView, flushProb())
 //        updateProbView(straightTextView, straightProb())
         updateProbView(threeKindTextview, threeKindProb())
@@ -91,6 +91,8 @@ class RiverActivity : AppCompatActivity() {
     private fun initPlayers() {
         val sharedPref = getSharedPreferences(getString(R.string.settings_file_key), Context.MODE_PRIVATE)
         players = sharedPref.getInt(resources.getString(R.string.players), SettingsActivity.defaultPlayers)
+        //TODO: Consider players
+        //regular probability * ((non visible cards - (players * 2 cards - 2 of your cards - burn)) / non visible cards)  <- consider multiplying by the cards left in deck / non visible cards for a more realistic estimate
     }
 
     /**
@@ -198,7 +200,7 @@ class RiverActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: BROKEN
+     * Probability of a Royal Flush
      */
     private fun royalFlushProb() : Double {
         val possRF = HashMap<SuitEnum, HashSet<CardModel>>()
@@ -280,7 +282,81 @@ class RiverActivity : AppCompatActivity() {
     }
 
     private fun fullHouseProb() : Double {
-        return 0.0
+        val noPair = HashSet<Int>()
+        val pair = HashSet<Int>()
+        val triple = HashSet<Int>()
+        val quad = HashSet<Int>()
+        for (card in visibleCards) {    //divide up into single, pair, 3 or 4 kind(triple), and keep track if there is 4-kind
+            when {
+                pair.contains(card.number) -> {
+                    pair.remove(card.number)
+                    triple.add(card.number)
+                }
+                noPair.contains(card.number) -> {
+                    noPair.remove(card.number)
+                    pair.add(card.number)
+                }
+                triple.contains(card.number) -> {
+                    quad.add(card.number)
+                }
+                else -> noPair.add(card.number)//number has not been seen yet
+            }
+        }
+
+        return when (triple.size) {
+            0 -> {
+                when (pair.size) {
+                    1 -> {
+                        when (visibleCards.size) {
+                            5 -> {  //must draw pair, triple OR triple, pair
+                                ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                                + ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                            }
+                            else -> 0.0 //impossible here
+                        }
+                    }
+                    2 -> {
+                        when (visibleCards.size) {
+                            5 -> {  //draw at least 1 card from a pair
+                                ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                                        ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))
+                            }
+                            6 -> ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            else -> 0.0
+                        }
+                    }
+                    3 -> {
+                        when (visibleCards.size) {  //theoretically 6-7 cards on table, so up to 1 draw
+                            6 -> ((pair.size * 2.0) / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            else -> 0.0
+                        }
+                    }
+                    else -> 0.0
+                }
+            }
+            1 -> {
+                when (pair.size) {
+                    0 -> {  //no pairs, so fallback to noPair.  Also consider getting a pair on turn & river
+                        when (visibleCards.size) {
+                            5 -> {
+                                ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble())) +
+                                        ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)) +
+                                        (((numCards.toDouble() - noPair.size - (pair.size * 2.0) - ((triple.size - quad.size) * 3.0) - (quad.size * 4.0)) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                                (3.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            }
+                            6 -> {  //can only draw 1, so must match a card that is visible already
+                                ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            }
+                            else -> 0.0
+                        }
+                    }
+                    else -> 1.0 //full house exists
+                }
+            }
+            else -> 1.0 // two sets of 3-kind
+        }
     }
 
     /**
