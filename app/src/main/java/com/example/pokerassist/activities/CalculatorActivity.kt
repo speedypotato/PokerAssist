@@ -22,7 +22,7 @@ import kotlin.collections.LinkedHashMap
 class CalculatorActivity : AppCompatActivity() {
     companion object {
         const val defaultBuyIn = 5000.0
-        const val simpleDefaultBuyIn = 1.0
+        const val simpleDefaultBuyIn = 2.0
 
         val colorValueMap = mapOf(
             R.color.white to 0.0002, R.color.yellow to 0.0004,  R.color.red to 0.001,
