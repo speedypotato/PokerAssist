@@ -143,7 +143,8 @@ class CalculatorActivity : AppCompatActivity() {
                     colorMap[this] = color.key
                 })
                 val value = EditText(this.context).apply {
-                    layoutParams = LinearLayout.LayoutParams(100, LinearLayout.LayoutParams.WRAP_CONTENT).apply{
+                    layoutParams = LinearLayout.LayoutParams(100,
+                        LinearLayout.LayoutParams.WRAP_CONTENT).apply{
                         weight = 1f
                     }
                     setText((color.value * buyInAmt).toString())
@@ -152,7 +153,8 @@ class CalculatorActivity : AppCompatActivity() {
                     filters += InputFilter.LengthFilter(maxLength)
                 }
                 val qty = EditText(this.context).apply {
-                    layoutParams = LinearLayout.LayoutParams(100, LinearLayout.LayoutParams.WRAP_CONTENT).apply{
+                    layoutParams = LinearLayout.LayoutParams(100,
+                        LinearLayout.LayoutParams.WRAP_CONTENT).apply{
                         weight = 1f
                     }
                     setText(defaultQty.toString())
@@ -227,7 +229,8 @@ class CalculatorActivity : AppCompatActivity() {
         var total = BigDecimal(0)
         for (fields in valQuantMap) {
             if (fields.key.text.isNotBlank() && fields.value.text.isNotBlank())
-                total += fields.key.text.toString().toBigDecimal() * (fields.value.text.toString().toBigDecimal())
+                total += fields.key.text.toString().toBigDecimal() *
+                        (fields.value.text.toString().toBigDecimal())
         }
         var totalString = "\$" + total.toString()
         val numDecimals = totalString.substring(totalString.indexOf('.') + 1).length

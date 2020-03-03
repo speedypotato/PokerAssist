@@ -5,25 +5,19 @@ import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.example.pokerassist.ActivityEnum
 import com.example.pokerassist.CardModel
 import com.example.pokerassist.R
 import com.example.pokerassist.SuitEnum
 import kotlinx.android.synthetic.main.activity_river.*
-import java.math.BigDecimal
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
-import kotlin.math.max
 
-//TODO: figure out actual probabilities
+//TODO: Fix straight probability inaccuracies
+//      implement card chance of being unavailable in every prob() instead of in view()
 class RiverActivity : AppCompatActivity() {
     companion object {
         const val numCards = 52
@@ -46,11 +40,11 @@ class RiverActivity : AppCompatActivity() {
         calcButtonRiver.setOnClickListener { calculatorSubmit() }
 
         updateProbView(royalFlushTextView, royalFlushProb())
-//        updateProbView(straightFlushTextView, straightFlushProb())
+        updateProbView(straightFlushTextView, straightFlushProb())
         updateProbView(fourKindTextView, fourKindProb())
         updateProbView(fullHouseTextView, fullHouseProb())
         updateProbView(flushTextView, flushProb())
-//        updateProbView(straightTextView, straightProb())
+        updateProbView(straightTextView, straightProb())
         updateProbView(threeKindTextview, threeKindProb())
         updateProbView(twoPairTextView, twoPairProb())
         updateProbView(onePairTextView, onePairProb())
@@ -91,8 +85,6 @@ class RiverActivity : AppCompatActivity() {
     private fun initPlayers() {
         val sharedPref = getSharedPreferences(getString(R.string.settings_file_key), Context.MODE_PRIVATE)
         players = sharedPref.getInt(resources.getString(R.string.players), SettingsActivity.defaultPlayers)
-        //TODO: Consider players
-        //regular probability * ((non visible cards - (players * 2 cards - 2 of your cards - burn)) / non visible cards)  <- consider multiplying by the cards left in deck / non visible cards for a more realistic estimate
     }
 
     /**
@@ -103,9 +95,6 @@ class RiverActivity : AppCompatActivity() {
         visibleCards.addAll(intent.getParcelableArrayListExtra(resources.getString(R.string.selected_cards_tag)) ?: ArrayList())
         visibleCards.sort()
         cardsLeft = numCards - (players * numDealt) - (visibleCards.size - 1)
-//        for (card in visibleCards)
-//            Toast.makeText(this, visibleCards.toString(), Toast.LENGTH_SHORT).show()
-//        Toast.makeText(this, "numcards:" + numCards.toString() + " players*numDealt:" + (players * numDealt).toString() + " visibleCards.size:" + (visibleCards.size - 1).toString(), Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -187,16 +176,35 @@ class RiverActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Given a TextView and Double, update the view accordingly
+     */
     private fun updateProbView(v: TextView, prob: Double) {
+        //TODO: Do this accurately outside of this method(see class comments)
+        //regular probability * ((non visible cards - (players * 2 cards - 2 of your cards - burn)) / non visible cards)  <- consider multiplying by the cards left in deck / non visible cards for a more realistic estimate
+        val chance: Double = when (visibleCards.size) {
+            5 -> {
+                (((numCards - visibleCards.size) - (players * 2.0 - 2.0 - 1.0)) / (numCards - visibleCards.size) +     //average burn chance for more accurate estimate
+                    ((numCards - visibleCards.size - 1) - (players * 2.0 - 2.0 - 2.0)) / (numCards - visibleCards.size - 1)) / 2.0
+            }
+            6 -> {
+                ((numCards - visibleCards.size) - (players * 2.0 - 2.0 - 1.0)) / (numCards - visibleCards.size)
+            }
+            else -> 1.0
+        }
+
         var probability = prob
         if (visibleCards.size == 7 && probability != 1.0)   //if @ game end, didn't get, show 0(impossible)
             probability = 0.0
+        else if (probability > 1.0) //maximum 100%
+            probability = 1.0
 
-        if (probability == 1.0)
+        v.text = (probability * chance * 100).toString()    //fudge draw chance
+        if (probability == 1.0) {
+            v.text = (probability * 100).toString()
             v.setTextColor(ContextCompat.getColor(this, R.color.colorAccent))
-        else if (probability == 0.0)
+        } else if (probability == 0.0)
             v.setTextColor(ContextCompat.getColor(this, R.color.colorAccentRed))
-        v.text = (probability * 100).toString()
     }
 
     /**
@@ -218,11 +226,6 @@ class RiverActivity : AppCompatActivity() {
             possRF[suit] = cards.filterTo(HashSet()) { cm -> !visibleCards.contains(cm) }
         }
 
-//        val cardFreq = HashMap<Int, Int>()
-//        for (card in visibleCards) {    //frequency map for easier calc
-//            cardFreq[card.number] = (cardFreq[card.number] ?: 1) + 1
-//        }
-
         var prob = 0.0
         for (cards in possRF.values) { //begin probability calculation
             when (visibleCards.size) {
@@ -230,10 +233,10 @@ class RiverActivity : AppCompatActivity() {
                     when (cards.size) {
                         2 -> {  //need 2 left to complete
                             prob += (2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
-                                (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))}
+                                (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))}
                         1 -> {
                             prob += (1.0 / (numCards.toDouble() - visibleCards.size.toDouble())) +
-                                (.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1))}
+                                (.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))}
                         0 -> { return 1.0 } //RF found
                     }
                 }
@@ -253,10 +256,119 @@ class RiverActivity : AppCompatActivity() {
         return prob
     }
 
+    /**
+     * Probability of a straight flush
+     * NOTE: See straightProb() for probability issue
+     */
     private fun straightFlushProb() : Double {
-        return 0.0
+        val sorted = ArrayList<ArrayList<CardModel>>() //add aces to lowest idx
+        val sortedWithLow = ArrayList<ArrayList<CardModel>>()
+        for (i in 0..3) {
+            sorted.add(ArrayList())
+            sortedWithLow.add(ArrayList())
+        }
+        for (card in visibleCards) {
+            val idx = when (card.suit) {
+                SuitEnum.CLUB -> 0
+                SuitEnum.HEART -> 1
+                SuitEnum.DIAMOND -> 2
+                SuitEnum.SPADE -> 3
+            }
+            if (card.number == 1) {   //add high As to the end first
+                sorted[idx].add(CardModel(14, card.suit, false))
+                sortedWithLow[idx].add(CardModel(1, card.suit, false))   //14 as high ace to determine straight
+            } else {
+                sorted[idx].add(card)
+            }
+        }
+        for (i in 0..3) {
+            sortedWithLow[i].addAll(sorted[i]) //1 -> 14
+        }
+
+        val possible = HashSet<List<CardModel>>()
+        for (suits in sortedWithLow) {    //get possible straight flushes
+            var workingList = ArrayList<CardModel>()
+            for (card in suits) {
+                workingList.add(card)
+                if (workingList.size > 0 && card.number - workingList[0].number > 4) {  //added an invalid card
+                    if (((workingList.size - 1) >= 3 && visibleCards.size == 5) ||
+                        ((workingList.size - 1) >= 4 && visibleCards.size == 6)) {  //straight is possible
+                        // add working list minus the most recently added invalid
+                        possible.add(ArrayList<CardModel>().apply {
+                            addAll(workingList)
+                            removeAt(workingList.size - 1)
+                        })  //working list contains a potential straight flush
+                    }
+                    while (workingList.size > 0 && card.number - workingList[0].number > 4) //update working
+                        workingList.removeAt(0)
+                }
+            }
+            if ((((workingList.size) >= 3 && visibleCards.size == 5) || ((workingList.size) >= 4 && visibleCards.size == 6))
+                && workingList[workingList.size - 1].number - workingList[0].number < 5) { //last check fencepost
+                possible.add(ArrayList<CardModel>().apply {
+                    addAll(workingList)
+                })  //working list contains a potential straight flush
+            }
+        }
+
+        var prob = 0.0  //straight probability calculation
+        for (cards in possible) {
+            when (cards.size) {
+                3 -> {
+                    when (cards[cards.size - 1].number - cards[0].number) {
+                        2 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low exists
+                                ((2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            } else if (cards[0].number == 2 || cards[cards.size - 1].number == 13) {    //hit ace on first draw or go the other way
+                                (((1.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))) +
+                                        ((1.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (2.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))))
+                            } else {
+                                ((2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (2.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            }
+                        }
+                        3 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low
+                                ((2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                    (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            } else {
+                                ((3.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                    (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            }
+                        }
+                        4 -> {
+                            prob += ((2.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                    (1.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                        }
+                    }
+                }
+                4 -> {
+                    when (cards[cards.size - 1].number - cards[0].number) {
+                        3 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low exists
+                                (1.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            } else {
+                                (2.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            }
+                        }
+                        4 -> {
+                            prob += (1.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                        }
+                    }
+                }
+                5 -> prob = 1.0
+            }
+        }
+
+        return prob
     }
 
+    /**
+     * Probability of four of a kind
+     */
     private fun fourKindProb() : Double {
         var freqMap = HashMap<Int, Int>()
         for (i in visibleCards) {
@@ -281,6 +393,9 @@ class RiverActivity : AppCompatActivity() {
         return prob
     }
 
+    /**
+     * Probability of a full house
+     */
     private fun fullHouseProb() : Double {
         val noPair = HashSet<Int>()
         val pair = HashSet<Int>()
@@ -343,7 +458,8 @@ class RiverActivity : AppCompatActivity() {
                             5 -> {
                                 ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble())) +
                                         ((noPair.size * 3.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)) +
-                                        (((numCards.toDouble() - noPair.size - (pair.size * 2.0) - ((triple.size - quad.size) * 3.0) - (quad.size * 4.0)) / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (((numCards.toDouble() - noPair.size - (pair.size * 2.0) - ((triple.size - quad.size) * 3.0) -
+                                                (quad.size * 4.0)) / (numCards.toDouble() - visibleCards.size.toDouble())) *
                                                 (3.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
                             }
                             6 -> {  //can only draw 1, so must match a card that is visible already
@@ -376,7 +492,8 @@ class RiverActivity : AppCompatActivity() {
                 5 -> {  //can draw 2 cards
                     for (value in suitFreq.values) {
                         when (value) {
-                            3 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble()) * (13.0 - value - 1.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)
+                            3 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble()) *
+                                    (13.0 - value - 1.0) / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)
                             4 -> probability += (13.0 - value) / (numCards.toDouble() - visibleCards.size.toDouble())
                         }
                     }
@@ -395,9 +512,100 @@ class RiverActivity : AppCompatActivity() {
 
     /**
      * Probability of a straight
+     * NOTE: somewhat inaccurate, e.g. A 3456 -> prob is (2) + (2 | 7) instead of (2 | 7)
      */
     private fun straightProb() : Double {
-        return 0.0
+        val sorted = ArrayList<CardModel>() //add aces to lowest idx
+        val sortedWithLow = ArrayList<CardModel>()
+        for (card in visibleCards) {
+            if (card.number == 1) {   //add high As to the end first
+                sorted.add(CardModel(14, card.suit, false))
+                sortedWithLow.add(CardModel(1, card.suit, false))   //14 as high ace to determine straight
+            } else {
+                sorted.add(card)
+            }
+        }
+        sortedWithLow.addAll(sorted) //1 -> 14
+
+        val possible = HashSet<List<CardModel>>()
+        val workingList = ArrayList<CardModel>()
+        for (card in sortedWithLow) {    //get possible straight flushes
+            if (workingList.size > 0 && card.number == workingList[workingList.size - 1].number)    //skip duplicate numbers
+                continue
+            else
+                workingList.add(card)
+
+            if (workingList.size > 0 && card.number - workingList[0].number > 4) {  //added an invalid card
+                if (((workingList.size - 1) >= 3 && visibleCards.size == 5) || ((workingList.size - 1) >= 4 && visibleCards.size == 6)) {  //straight is possible
+                    possible.add(ArrayList<CardModel>().apply { //add working list minus the most recently added invalid
+                        addAll(workingList)
+                        removeAt(workingList.size - 1)
+                    })
+                }
+                while (workingList.size > 0 && card.number - workingList[0].number > 4) //update working
+                    workingList.removeAt(0)
+            }
+        }
+        if ((((workingList.size) >= 3 && visibleCards.size == 5) || ((workingList.size) >= 4 && visibleCards.size == 6))
+            && workingList[workingList.size - 1].number - workingList[0].number < 5) {  //if fencepost is valid
+            possible.add(ArrayList<CardModel>().apply { //add working list minus the most recently added invalid
+                addAll(workingList)
+            })
+        }
+
+        var prob = 0.0  //straight probability calculation
+        for (cards in possible) {
+            when (cards.size) {
+                3 -> {
+                    when (cards[cards.size - 1].number - cards[0].number) {
+                        2 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low exists
+                                ((8.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (4.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            } else if (cards[0].number == 2 || cards[cards.size - 1].number == 13) {    //hit ace on first draw or go the other way
+                                (((4.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (4.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))) +
+                                        ((4.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                                (8.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0))))
+                            } else {
+                                ((8.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (8.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            }
+                        }
+                        3 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low
+                                ((8.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (4.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            } else {
+                                ((12.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                        (4.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                            }
+                        }
+                        4 -> {
+                            prob += ((8.0 / (numCards.toDouble() - visibleCards.size.toDouble())) *
+                                    (4.0 / (numCards.toDouble() - visibleCards.size.toDouble() - 1.0)))
+                        }
+                    }
+                }
+                4 -> {
+                    when (cards[cards.size - 1].number - cards[0].number) {
+                        3 -> {
+                            prob += if ((cards[0].number % 13) == 1 || (cards[cards.size - 1].number % 13) == 1) {    //ace high/low exists
+                                (4.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            } else {
+                                (8.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                            }
+                        }
+                        4 -> {
+                            prob += (4.0 / (numCards.toDouble() - visibleCards.size.toDouble()))
+                        }
+                    }
+                }
+                5 -> prob = 1.0
+            }
+        }
+
+        return prob
     }
 
     /**
@@ -484,7 +692,6 @@ class RiverActivity : AppCompatActivity() {
      * Probability drawing higher
      */
     private fun highCardProb() : Double {
-        // unhelpful = unknown - helpful -> helpful / unknown?
         return if (visibleCards[visibleCards.size - 1].number == 1)
             1.0
         else

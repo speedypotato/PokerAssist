@@ -74,6 +74,9 @@ class SplashActivity : AppCompatActivity() {
         return (sharedPref.getInt(resources.getString(R.string.players), -1) != -1)
     }
 
+    /**
+     * Forces user to initiate settings
+     */
     private fun noSettingsRoutine() {
         handler.removeCallbacksAndMessages(null)     //cancels startActivity for SELECT
         AlertDialog.Builder(this)

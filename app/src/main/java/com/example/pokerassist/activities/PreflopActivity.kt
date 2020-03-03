@@ -113,9 +113,11 @@ class PreflopActivity : AppCompatActivity() {
     private fun determineFudge(res: BetEnum) {
         val randomNum = (1..100).random()
         if (res == BetEnum.FOLD && randomPerc >= randomNum) {
-            if (drawnCards[0].number != 1 && drawnCards[0].number - drawnCards[1].number <= straightDiff)  //straight
+            if (drawnCards[0].number != 1 &&
+                drawnCards[0].number - drawnCards[1].number <= straightDiff)  //straight
                 fudgeTextView.text = resources.getString(R.string.fudge_straight)
-            else if (drawnCards[0].number == 1 && drawnCards[1].number - drawnCards[0].number <= straightDiff)
+            else if (drawnCards[0].number == 1 &&
+                drawnCards[1].number - drawnCards[0].number <= straightDiff)
                 fudgeTextView.text = resources.getString(R.string.fudge_straight)
             else if (isSuited()) //flush
                     fudgeTextView.text = resources.getString(R.string.fudge_flush)

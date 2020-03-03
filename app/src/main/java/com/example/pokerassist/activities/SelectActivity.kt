@@ -115,7 +115,8 @@ class SelectActivity : AppCompatActivity() {
                     ImageButton(this.context).apply{
                         setBackgroundResource(android.R.drawable.btn_default)
                         backgroundTintList = ContextCompat.getColorStateList(this.context, android.R.color.darker_gray)
-                        setImageResource(resources.getIdentifier(resources.getString(R.string.card_prefix) + card.suit.suit + card.number.toString(), "drawable", packageName))
+                        setImageResource(resources.getIdentifier(resources.getString(R.string.card_prefix)
+                                + card.suit.suit + card.number.toString(), "drawable", packageName))
                         layoutParams = ViewGroup.LayoutParams(width / cards.size, (1.4 * width / cards.size).toInt())
                         scaleType = ImageView.ScaleType.FIT_END
                         setOnClickListener{tryToggle(it)}
@@ -172,7 +173,9 @@ class SelectActivity : AppCompatActivity() {
                 }
             })
             when(nextActivity) {
-                ActivityEnum.RIVER -> putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag), intent.getParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag)))
+                ActivityEnum.RIVER ->
+                    putParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag),
+                        intent.getParcelableArrayListExtra(resources.getString(R.string.drawn_cards_tag)))
                 else -> { }
             }
         })

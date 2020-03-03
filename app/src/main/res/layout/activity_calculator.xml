@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:fontFamily="@font/stardos_stencil_bold"
-        android:text="@string/speedypotato"
+        android:text="@string/author"
         android:textColor="@color/colorAccentDark"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"

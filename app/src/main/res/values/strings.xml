@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">PokerAssist</string>
-    <string name="author">SpeedyPotato</string>
+    <string name="author">SpeedyPotato v1.0.0</string>
     <string name="call">Call</string>
     <string name="call_fold">Call or Fold</string>
     <string name="card_prefix">card_</string>
@@ -13,6 +13,7 @@
     <string name="error_selection_2">cards are selected.</string>
     <string name="error_settings">Please verify settings.</string>
     <string name="error_settings_2">Please populate all fields.</string>
+    <string name="error_settings_3">Exceeded Max Players Allowed:</string>
     <string name="flop_probabilities">Flop Probabilities</string>
     <string name="flush">Flush</string>
     <string name="fold">Fold</string>
@@ -63,7 +64,6 @@
     <string name="enter_buy_in_amt">Enter Buy-In Amount</string>
     <string name="quantity">Quantity</string>
     <string name="simple_mode_tag">simple_mode_tag</string>
-    <string name="speedypotato">SpeedyPotato</string>
     <string name="total">Total:</string>
     <string name="value">Value</string>
     <string name="zero">0.00</string>
